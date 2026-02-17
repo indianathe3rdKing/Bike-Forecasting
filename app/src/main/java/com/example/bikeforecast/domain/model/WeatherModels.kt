@@ -1,5 +1,7 @@
 package com.example.bikeforecast.domain.model
 
+import com.google.gson.annotations.SerializedName
+
 
 data class WeatherResponse(
     val city: City,
@@ -32,7 +34,7 @@ data class WeatherItem(
 data class MainWeather(
     @SerializedName("temp")
     val temp: Double,
-    @SerializedName("temp_min"),
+    @SerializedName("temp_min")
     val tempMin: Double,
     @SerializedName("temp_max")
     val tempMax: Double,
