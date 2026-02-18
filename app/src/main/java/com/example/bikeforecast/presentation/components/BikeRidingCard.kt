@@ -52,7 +52,7 @@ fun BikeRidingCard(
                     3.dp, Color(0xFF22C55E),
                     RoundedCornerShape(20.dp),
 
-                    )
+                    )else Modifier
             ),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
