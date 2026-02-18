@@ -52,7 +52,6 @@ data class Wind(
     val speed: Double
 )
 
-
 data class DailyForecast(
     val date: Long,
     val temperature: Temperature,
@@ -67,4 +66,10 @@ data class Temperature(
     val min: Double,
     val max: Double,
     val night: Double
+)
+
+data class WeatherState(
+    val isLoading: Boolean=false,
+    val weatherData: WeatherResponse?= null,
+    val error: String? =null
 )

@@ -7,15 +7,9 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.4"
 kotlin = "2.0.21"
-composeBom = "2024.09.00"
+composeBom = "2026.02.00"
 
 playServicesLocation = "21.3.0"
-retrofit = "3.0.0"
-okhttp = "5.1.0"
-gson = "2.13.1"
-coil = "2.7.0"
-koinAndroid = "4.1.0"
-koinAndroidxCompose = "4.1.0"
 koin-bom = "4.1.1"  # Stable version
 
 [libraries]

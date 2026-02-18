@@ -1,0 +1,176 @@
+package com.example.bikeforecast.presentation.viewModel
+
+import android.Manifest
+import android.app.Application
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.annotation.RequiresPermission
+import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.AndroidViewModel
+import com.example.bikeforecast.domain.model.BikeRidingScore
+import com.example.bikeforecast.domain.model.DailyForecast
+import com.example.bikeforecast.domain.usecase.CalculateBikeRidingScoreUseCase
+import com.example.bikeforecast.domain.usecase.GetWeatherForestUseCase
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import androidx.compose.runtime.State
+import androidx.lifecycle.viewModelScope
+import androidx.navigationevent.NavigationEventDispatcher
+import com.example.bikeforecast.data.remote.Config
+import com.example.bikeforecast.domain.model.Temperature
+import com.example.bikeforecast.domain.model.WeatherResponse
+import com.example.bikeforecast.domain.model.WeatherState
+import com.google.android.gms.location.Priority
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+class WeatherViewModel(
+    application: Application,
+    private val getWeatherForecastUseCase: GetWeatherForestUseCase,
+    private val calculateBikeRidingScoreUseCase: CalculateBikeRidingScoreUseCase
+) : AndroidViewModel(application) {
+    //location
+    private val fusedLocationClient: FusedLocationProviderClient = LocationServices
+        .getFusedLocationProviderClient(
+            application
+        )
+
+    private val _locationPermissionGranted = mutableStateOf(false)
+    val locationPermissionGranted: State<Boolean> = _locationPermissionGranted
+
+    //weather
+    private val _weatherState = mutableStateOf(WeatherState())
+    val weatherState: State<WeatherState> = _weatherState
+
+    //scores
+    private val _dailyScores =
+        mutableStateOf<List<Pair<DailyForecast, BikeRidingScore>>>(emptyList())
+    val dailyScores: State<List<Pair<DailyForecast, BikeRidingScore>>> = _dailyScores
+
+    fun checkLocationPermission() {
+        val context = getApplication<Application>()
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        _locationPermissionGranted.value = hasPermission
+        if (hasPermission) getCurrentLocation()
+    }
+
+
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    private fun getCurrentLocation() {
+        if (
+            ContextCompat.checkSelfPermission(
+                getApplication(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                null
+            )
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        fetchWeatherData(it.latitude, it.longitude)
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    _weatherState.value = _weatherState.value.copy(
+                        isLoading = false,
+                        error = "Failed to get location: ${exception.message}"
+                    )
+                }
+        }
+    }
+
+    private fun fetchWeatherData(latitude: Double, longitude: Double) {
+        _weatherState.value = _weatherState.value.copy(
+            isLoading = true,
+            error = null
+        )
+
+        viewModelScope.launch {
+            getWeatherForecastUseCase(latitude, longitude)
+                .onSuccess { response ->
+                    val dailyForecasts = processForecastIntoDaily(response)
+                    val score = dailyForecasts.map { forecast ->
+                        forecast to calculateBikeRidingScoreUseCase(forecast)
+                    }
+                    _dailyScores.value = score
+                    _weatherState.value = _weatherState.value.copy(
+                        isLoading = false,
+                        weatherData = response.copy(daily = dailyForecasts),
+                        error = null
+                    )
+
+                }
+                .onFailure { exception ->
+                    _weatherState.value = _weatherState.value.copy(
+                        isLoading = false,
+                        error = "Failed to fetch weather data: ${exception.message}"
+                    )
+                }
+        }
+    }
+
+    private fun processForecastIntoDaily(response: WeatherResponse): List<DailyForecast>{
+        val allDailyForecasts = mutableListOf<DailyForecast>()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd",Locale.getDefault())
+
+        //Group forecast items by date string (yyyy-MM-dd)
+        val dailyGroups = response.list.groupBy {
+            dateFormat.format(it.date*1000)
+        }
+
+        dailyGroups.values.forEach { singleDayForestcast->
+            if (singleDayForestcast.isNotEmpty()){
+                val firstForecast = singleDayForestcast.first()
+                val maxTemp = singleDayForestcast.maxOf { it.main.tempMax }
+                val minTemp = singleDayForestcast.minOf { it.main.tempMin}
+                val avgHumidity = singleDayForestcast.map { it.main.humidity}.average().toInt()
+                val avgWindSpeed = singleDayForestcast.map { it.wind.speed }.average()
+                val avgPrecipitation =
+                    singleDayForestcast.map { it.precipitationPredictability }.average()
+
+                //Get the most common weather condition for the day
+
+                val mostCommonWeather = singleDayForestcast
+                    .flatMap { it.weather }
+                    .groupBy { it.main }
+                    .maxByOrNull { it.value.size }
+                    ?.value?.first()?: firstForecast.weather.first()
+
+                val  dailyForecast = DailyForecast(
+                    date= firstForecast.date,
+                    temperature = Temperature(
+                        day= firstForecast.main.temp,
+                        min=minTemp,
+                        max=maxTemp,
+                        night = firstForecast.main.temp
+                    ),
+                    weather= listOf(mostCommonWeather),
+                    humidity = avgHumidity,
+                    windSpeed = avgWindSpeed,
+                    precipitationPredictability = avgPrecipitation
+                    )
+                allDailyForecasts.add(dailyForecast)
+            }
+        }
+        return allDailyForecasts.take(6)
+    }
+
+    fun getWeatherIconUrl(iconCode: String): String{
+        return "${Config.WEATHER_ICON_BASE_URL}$iconCode@2x.png"
+    }
+
+    fun formatDate(timestamp: Long): String{
+        val date = Date(timestamp * 1000) //Convert to milliseconds
+        val dateFormat = SimpleDateFormat("EEE,MMM d", Locale.getDefault())
+        return dateFormat.format(date)
+    }
+}
