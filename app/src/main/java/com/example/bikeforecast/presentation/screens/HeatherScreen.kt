@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -33,7 +34,7 @@ fun HeaderSection(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E22938).copy(alpha = 0.8f)
+            containerColor = Color(0xFF1E2938).copy(alpha = 0.8f)
         )
     ){
         Column(
@@ -60,17 +61,18 @@ fun HeaderSection(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "🏆 Best day: ",
+                        text = "🏆 Best day : ",
                         color = Color(0xFF22C55E),
                         fontSize = 18.sp, fontWeight = FontWeight.SemiBold
                     )
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text= viewModel.formatDate(bestForecast.date),
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = bestScore.overallRating,
                         color= Color(0xFF94A3B8),
