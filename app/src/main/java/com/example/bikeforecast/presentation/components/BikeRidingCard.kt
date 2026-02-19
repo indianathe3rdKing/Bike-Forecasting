@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bikeforecast.domain.model.BikeRidingScore
 import com.example.bikeforecast.domain.model.DailyForecast
+import com.example.bikeforecast.presentation.util.getScoreColor
+import com.example.bikeforecast.presentation.util.capitalize
 import com.example.bikeforecast.presentation.viewModel.WeatherViewModel
 
 

@@ -127,19 +127,19 @@ class WeatherViewModel(
             dateFormat.format(it.date*1000)
         }
 
-        dailyGroups.values.forEach { singleDayForestcast->
-            if (singleDayForestcast.isNotEmpty()){
-                val firstForecast = singleDayForestcast.first()
-                val maxTemp = singleDayForestcast.maxOf { it.main.tempMax }
-                val minTemp = singleDayForestcast.minOf { it.main.tempMin}
-                val avgHumidity = singleDayForestcast.map { it.main.humidity}.average().toInt()
-                val avgWindSpeed = singleDayForestcast.map { it.wind.speed }.average()
+        dailyGroups.values.forEach { singleDayForecast->
+            if (singleDayForecast.isNotEmpty()){
+                val firstForecast = singleDayForecast.first()
+                val maxTemp = singleDayForecast.maxOf { it.main.tempMax }
+                val minTemp = singleDayForecast.minOf { it.main.tempMin}
+                val avgHumidity = singleDayForecast.map { it.main.humidity}.average().toInt()
+                val avgWindSpeed = singleDayForecast.map { it.wind.speed }.average()
                 val avgPrecipitation =
-                    singleDayForestcast.map { it.precipitationPredictability }.average()
+                    singleDayForecast.map { it.precipitationPredictability }.average()
 
                 //Get the most common weather condition for the day
 
-                val mostCommonWeather = singleDayForestcast
+                val mostCommonWeather = singleDayForecast
                     .flatMap { it.weather }
                     .groupBy { it.main }
                     .maxByOrNull { it.value.size }

@@ -1,7 +1,6 @@
 package com.example.bikeforecast.presentation.screens
 
 import android.Manifest
-import android.graphics.Paint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.bikeforecast.domain.model.WeatherResponse
 import com.example.bikeforecast.presentation.components.BikeRidingCard
+import com.example.bikeforecast.presentation.util.capitalize
 import com.example.bikeforecast.presentation.viewModel.WeatherViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -125,18 +125,4 @@ fun WeatherContent(
             }
         }
     }
-}
-
-fun getScoreColor(score: Int): Color {
-    return when {
-        score >= 80 -> Color(0xFF22C55E)// Green - Excellent
-        score >= 60 -> Color(0xFF4ADE80) // Light Green - Good
-        score >= 40 -> Color(0xFFFACC15) // Yellow - Moderate
-        score >= 20 -> Color(0XFFF87171) // Light Red - Poor
-        else -> Color(0xFFDC2626)// Red - Dangerous
-    }
-}
-
-fun String.capitalize(): String {
-    return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString()}
 }
