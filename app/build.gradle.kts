@@ -1,7 +1,26 @@
+import java.io.InputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Load API key from forecast.properties (git-ignored) with optional fallback to Gradle property
+val forecastProps = Properties()
+val forecastPropsFile = File(rootProject.rootDir, "forecast.properties")
+if (forecastPropsFile.exists() && forecastPropsFile.isFile) {
+    forecastPropsFile.inputStream().use { input: InputStream ->
+        forecastProps.load(input)
+    }
+}
+
+val apiKey: String = (
+    forecastProps.getProperty("API_KEY")
+        ?: project.findProperty("API_KEY") as String?
+).orEmpty()
+    .trim()
+    .removeSurrounding("\"")
 
 android {
     namespace = "com.example.bikeforecast"
@@ -9,6 +28,10 @@ android {
         version = release(36) {
             minorApiLevel = 1
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
@@ -19,6 +42,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        applicationId= "com.example.bikeforecast"
+
+        // Ensure BuildConfig.API_KEY exists in all variants.
+        // Quotes are required because buildConfigField expects a Java literal.
+        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -28,14 +56,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
     }
 }
 
